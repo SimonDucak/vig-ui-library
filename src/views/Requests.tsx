@@ -6,56 +6,52 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import { Filter, FilterProps, FilterType, SelectFilter } from "../components/Filter";
+import { Filter, FilterProps, FilterType } from "../components/Filter";
 import { useState } from "react";
-import { IoAccessibility, IoAddOutline, IoChevronForward, IoSearchOutline, IoSwapHorizontal } from "react-icons/io5";
+import { IoAccessibility, IoChevronForward, IoSearchOutline, IoSwapHorizontal } from "react-icons/io5";
 
 export const Requests = () => {
     const theme = useTheme();
 
     const [tab, setTab] = useState(1);
 
-    const [searchQuery, setSearchQuery] = useState("");
+    const [query, setQuery] = useState({
+        q: "",
+        status: -1,
+        requester: -1,
+    });
 
-    const [requester, setRequester] = useState(-1);
-
-    const [state, setState] = useState(-1);
-
-    const requesterField: SelectFilter<number> = {
-        type: FilterType.SELECT,
-        placeholder: "Podávateľ",
-        value: requester,
-        options: [
-            { value: 0, label: "Maklér" },
-            { value: 1, label: "Klient" },
-            { value: 2, label: "Obchodník" },
-        ],
-        onChange: (value) => setRequester(value)
-    };
-
-    const stateField: SelectFilter<number> = {
-        type: FilterType.SELECT,
-        placeholder: "Stav",
-        value: state,
-        options: [
-            { value: 0, label: "Vybavená" },
-            { value: 1, label: "Odoslaná na spracovanie" },
-            { value: 2, label: "Zrušena a nahradená inou" },
-        ],
-        onChange: (value) => setState(value)
-    };
-
-    const filterProps: FilterProps = {
-        input: {
-            placeholder: "Filtrovat  pomocou č. zmluvy",
-            value: searchQuery,
-            onChange: (e) => setSearchQuery(e.target.value)
+    const filterProps: FilterProps<typeof query> = {
+        query,
+        onQueryChange: (newQuery: typeof query) => {
+            setQuery(newQuery);
         },
-        fields: [
-            requesterField,
-            stateField,
-        ],
-    }
+        filters: {
+            q: {
+                type: FilterType.INPUT,
+                main: true,
+                placeholder: "Vyhľadať žiadosť",
+            },
+            status: {
+                type: FilterType.SELECT,
+                options: [
+                    { label: "Odoslané", value: 1 },
+                    { label: "Spracovávané", value: 2 },
+                    { label: "Dokončené", value: 3 },
+                ],
+                placeholder: "Stav žiadosti",
+            },
+            requester: {
+                type: FilterType.SELECT,
+                options: [
+                    { label: "Klient", value: 1 },
+                    { label: "Maklér", value: 2 },
+                    { label: "Obchodník", value: 3 },
+                ],
+                placeholder: "Podávateľ",
+            },
+        },
+    };
 
     return (
         <Box display="flex" flexDirection="column" height="100vh">
