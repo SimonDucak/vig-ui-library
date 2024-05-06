@@ -8,6 +8,12 @@ export const palette: PaletteOptions = {
         dark: '#A20107',
         contrastText: '#FFFFFF',
     },
+    secondary: {
+        main: "#E4E8E8",
+        light: "#FAFAFA",
+        dark: "#C8C8C8",
+        contrastText: "#666666",
+    },
     error: {
         main: '#C40109',
         light: '#E7999D',
@@ -37,5 +43,8 @@ export const palette: PaletteOptions = {
         primary: '#000000',
         secondary: '#666666',
         disabled: '#999999',
+    },
+    grey: {
+        50: '#FBFBFB',
     }
 };

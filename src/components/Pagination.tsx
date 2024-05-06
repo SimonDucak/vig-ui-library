@@ -1,32 +1,71 @@
 import { useTheme } from '@mui/material/styles';
-import { Box, MenuItem, Pagination as MuiPagination, PaginationProps as MuiPaginationProps, Select, Typography } from "@mui/material"
+import { Box, MenuItem, Pagination as MuiPagination, PaginationProps as MuiPaginationProps, Select, SelectChangeEvent, Typography } from "@mui/material";
 
-export type PaginationProps = MuiPaginationProps;
+export type PaginationProps = Omit<MuiPaginationProps, "count" | "onChange"> & {
+    pageSizeOptions?: number[];
+    pageSize?: number;
+    totalCount: number;
+    page: number;
+    onChange: (page: number, pageSize: number) => void;
+}
 
-export const Pagination = (props: MuiPaginationProps) => {
+export const Pagination = ({ totalCount, page, onChange, pageSize, ...restProps }: PaginationProps) => {
     const theme = useTheme();
 
+    const pageSizeOptions = restProps.pageSizeOptions || [25, 50, 100];
+
+    const currentPageSize = pageSize || pageSizeOptions[0];
+
+    const count = Math.ceil(totalCount / currentPageSize);
+
+    const pageOptions = Array.from({ length: count }, (_, i) => i + 1);
+
     return (
-        <Box sx={{ display: "flex", alignItems: "center", gap: theme.spacing(1) }}>
-            <Typography variant="body2">Page</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: theme.spacing(1) }}>
+            <Box display={{ xs: "none", md: "flex" }} alignItems="center">
+                <Typography variant="body2">Page</Typography>
 
-            <Select value={1} size="small" sx={{ boxShadow: 'none', '.MuiOutlinedInput-notchedOutline': { border: 0 } }}>
-                <MenuItem value={1}>1</MenuItem>
-                <MenuItem value={2}>2</MenuItem>
-                <MenuItem value={3}>3</MenuItem>
-            </Select>
+                <Select
+                    size="small"
+                    sx={{ boxShadow: 'none', '.MuiOutlinedInput-notchedOutline': { border: "0!important" } }}
+                    value={page}
+                    onChange={(event: SelectChangeEvent<number>) => {
+                        onChange(Number(event.target.value), currentPageSize);
+                    }}
+                >
+                    {
+                        pageOptions.map((option) => (
+                            <MenuItem key={option} value={option}>{option}</MenuItem>
+                        ))
+                    }
+                </Select>
 
-            <Typography variant="body2">Rows Per Page</Typography>
+                <Typography variant="body2">Rows Per Page</Typography>
 
-            <Select value={25} size="small" sx={{ boxShadow: 'none', '.MuiOutlinedInput-notchedOutline': { border: 0 } }}>
-                <MenuItem value={10}>10</MenuItem>
-                <MenuItem value={25}>25</MenuItem>
-                <MenuItem value={50}>50</MenuItem>
-            </Select>
+                <Select
+                    size="small"
+                    sx={{ boxShadow: 'none', '.MuiOutlinedInput-notchedOutline': { border: "0!important" } }}
+                    value={currentPageSize}
+                    onChange={(event: SelectChangeEvent<number>) => {
+                        onChange(page, Number(event.target.value));
+                    }}
+                >
+                    {
+                        pageSizeOptions.map(option => (
+                            <MenuItem key={option} value={option}>{option}</MenuItem>
+                        ))
+                    }
+                </Select>
 
-            <Typography variant="body2">1 - 50 of 389</Typography>
+                <Typography variant="body2">{(page - 1) * currentPageSize} - {page * currentPageSize} of {totalCount}</Typography>
+            </Box>
 
-            <MuiPagination {...props} />
+            <MuiPagination
+                onChange={(_event, p) => {
+                    onChange(p, currentPageSize);
+                }}
+                count={count} {...restProps}
+            />
         </Box>
     )
 }

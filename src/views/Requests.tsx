@@ -8,7 +8,8 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import { Filter, FilterProps, FilterType } from "../components/Filter";
 import { useState } from "react";
-import { IoAccessibility, IoChevronForward, IoSearchOutline, IoSwapHorizontal } from "react-icons/io5";
+import { IoAccessibility, IoChevronForward, IoDocument, IoSearchOutline, IoSwapHorizontal } from "react-icons/io5";
+import { PopupProvider } from "../components/popup/PopupProvider";
 
 export const Requests = () => {
     const theme = useTheme();
@@ -19,6 +20,13 @@ export const Requests = () => {
         q: "",
         status: -1,
         requester: -1,
+        client: -1,
+        partnerNo: -1,
+        customFilter: -1,
+        customFilter1: -1,
+        customFilter2: -1,
+        page: 1,
+        pageSize: 25,
     });
 
     const filterProps: FilterProps<typeof query> = {
@@ -31,6 +39,30 @@ export const Requests = () => {
                 type: FilterType.INPUT,
                 main: true,
                 placeholder: "Vyhľadať žiadosť",
+            },
+            client: {
+                type: FilterType.SELECT,
+                options: [
+                    { label: "John Doe", value: 1 },
+                    { label: "Jane Doe", value: 2 },
+                    { label: "Alice", value: 3 },
+                    { label: "Bob", value: 4 },
+                    { label: "Charlie", value: 5 },
+                    { label: "David", value: 6 },
+                ],
+                placeholder: "Klient",
+            },
+            partnerNo: {
+                type: FilterType.SELECT,
+                options: [
+                    { label: "123456", value: 1 },
+                    { label: "654321", value: 2 },
+                    { label: "987654", value: 3 },
+                    { label: "456789", value: 4 },
+                    { label: "789456", value: 5 },
+                    { label: "321654", value: 6 },
+                ],
+                placeholder: "Číslo partnera",
             },
             status: {
                 type: FilterType.SELECT,
@@ -49,6 +81,42 @@ export const Requests = () => {
                     { label: "Obchodník", value: 3 },
                 ],
                 placeholder: "Podávateľ",
+            },
+            customFilter: {
+                type: FilterType.SELECT,
+                options: [
+                    { label: "123456", value: 1 },
+                    { label: "654321", value: 2 },
+                    { label: "987654", value: 3 },
+                    { label: "456789", value: 4 },
+                    { label: "789456", value: 5 },
+                    { label: "321654", value: 6 },
+                ],
+                placeholder: "Custom Filter",
+            },
+            customFilter1: {
+                type: FilterType.SELECT,
+                options: [
+                    { label: "123456", value: 1 },
+                    { label: "654321", value: 2 },
+                    { label: "987654", value: 3 },
+                    { label: "456789", value: 4 },
+                    { label: "789456", value: 5 },
+                    { label: "321654", value: 6 },
+                ],
+                placeholder: "Custom Filter",
+            },
+            customFilter2: {
+                type: FilterType.SELECT,
+                options: [
+                    { label: "123456", value: 1 },
+                    { label: "654321", value: 2 },
+                    { label: "987654", value: 3 },
+                    { label: "456789", value: 4 },
+                    { label: "789456", value: 5 },
+                    { label: "321654", value: 6 },
+                ],
+                placeholder: "Custom Filter",
             },
         },
     };
@@ -69,7 +137,14 @@ export const Requests = () => {
                     </Box>
 
                     <Box display="flex" py={1} px={2} justifyContent="flex-end">
-                        <Pagination count={100} />
+                        <Pagination
+                            totalCount={389}
+                            page={query.page}
+                            pageSize={query.pageSize}
+                            onChange={(page: number, pageSize: number) => {
+                                setQuery({ ...query, page, pageSize });
+                            }}
+                        />
                     </Box>
 
                     <Box sx={{ flexGrow: 1 }} px={2} pb={`${theme.variables.appBarHeight * 2}px`}>
@@ -184,6 +259,19 @@ const rows = [
 ];
 
 export default function RequestsTable() {
+    const { addPopup } = PopupProvider.usePopups();
+
+    const addNewPopup = (id: string) => {
+        addPopup({
+            id: id,
+            name: "Popup name",
+            body: (<div>popup body {id}</div>),
+            data: {},
+            title: `Popup title ${id}`,
+            icon: <IoDocument />
+        })
+    }
+
     return (
         <TableContainer>
             <Table sx={{ minWidth: 900 }}>
@@ -200,8 +288,8 @@ export default function RequestsTable() {
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {rows.map((row) => (
-                        <TableRow key={row.name}>
+                    {rows.map((row, index) => (
+                        <TableRow onClick={() => addNewPopup(index.toString())} key={row.name}>
                             <TableCell component="th" scope="row">
                                 {row.name}
                             </TableCell>

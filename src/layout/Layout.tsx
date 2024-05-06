@@ -17,11 +17,14 @@ import {
     IoChevronBackCircleOutline,
     IoNotificationsOutline,
     IoLogOutOutline,
+    IoCloseCircleOutline,
+    IoCloseOutline,
 } from "react-icons/io5";
 import { Drawer, DrawerHeader } from '../components/Drawer';
 import { Logo } from '../components/Logo';
 import { useNavigate, useMatch } from "react-router-dom";
 import { Route, useRouter, routes } from '../router/router';
+import { PopupProvider } from '../components/popup/PopupProvider';
 
 export type LayoutProps = {
     children: React.ReactNode;
@@ -107,6 +110,7 @@ export default function Layout({ children }: LayoutProps) {
                 <List>
                     {
                         Object.values(routes).map((definition, index) => <ListItem
+                            setOpen={setOpen}
                             key={index + 1}
                             open={open}
                             {...definition}
@@ -116,7 +120,7 @@ export default function Layout({ children }: LayoutProps) {
 
                 <Divider />
 
-                <div style={{ flexGrow: 1 }}></div>
+                <PopupsList open={open} />
 
                 <Divider />
 
@@ -146,16 +150,21 @@ export default function Layout({ children }: LayoutProps) {
 }
 
 const ListItem = ({
-    open, icon, name, path
-}: Route & { open: boolean }) => {
+    open, icon, name, path, setOpen
+}: Route & { open: boolean, setOpen: (bool: boolean) => void }) => {
     const theme = useTheme();
 
     const navigate = useNavigate();
 
     const active = useMatch({ path });
 
+    const onlyMediumScreen = useMediaQuery(theme.breakpoints.down("md"));
+
     return (
-        <MuiListItem disablePadding sx={{ display: "block" }} onClick={() => navigate(path)}>
+        <MuiListItem disablePadding sx={{ display: "block" }} onClick={() => {
+            if (onlyMediumScreen) setOpen(false);
+            navigate(path);
+        }}>
             <ListItemButton
                 sx={{
                     minHeight: 36,
@@ -182,5 +191,61 @@ const ListItem = ({
                 </ListItemText>
             </ListItemButton>
         </MuiListItem>
+    );
+}
+
+const PopupsList = ({ open }: { open: boolean }) => {
+    const { popups, openPopup, closePopup } = PopupProvider.usePopups();
+
+    const getSortedPopups = () => {
+        const withoutReference = [...popups];
+
+        withoutReference.sort((a, b) => {
+            if (a.title > b.title) return 1;
+            if (a.title < b.title) return -1;
+            return 0;
+        })
+
+        return withoutReference;
+    }
+
+    return (
+        <Box display="flex" flexGrow={1} flexDirection="column">
+            {popups.length > 0 && open && <Typography px={2} py={1} variant="subtitle2" fontSize={13}>
+                <strong>Otvorené okná</strong>
+            </Typography>}
+
+            {getSortedPopups().map((popup) => <Box
+                display="flex"
+                width="100%"
+                gap={1}
+                alignItems="center"
+                justifyContent="space-between"
+                pl={2} pr={1}
+                key={popup.id}
+                sx={{
+                    cursor: "pointer",
+                }}
+                onClick={() => openPopup(popup)}
+            >
+                <Box display="flex" flex-grow={1} alignItems="center" gap={1}>
+                    {popup.icon}
+
+                    {
+                        open && <Typography variant="subtitle2">{popup.title}</Typography>
+                    }
+                </Box>
+
+                {
+                    open && <IconButton
+                        aria-label="open drawer"
+                        onClick={() => closePopup(popup)}
+                        edge="start"
+                    >
+                        <IoCloseOutline size={24} />
+                    </IconButton>
+                }
+            </Box>)}
+        </Box>
     );
 }
