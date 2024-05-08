@@ -152,6 +152,8 @@ export default function Layout({ children }: LayoutProps) {
 const ListItem = ({
     open, icon, name, path, setOpen
 }: Route & { open: boolean, setOpen: (bool: boolean) => void }) => {
+    const { hideAllPopups } = PopupProvider.usePopups();
+
     const theme = useTheme();
 
     const navigate = useNavigate();
@@ -163,6 +165,7 @@ const ListItem = ({
     return (
         <MuiListItem disablePadding sx={{ display: "block" }} onClick={() => {
             if (onlyMediumScreen) setOpen(false);
+            hideAllPopups();
             navigate(path);
         }}>
             <ListItemButton
@@ -195,7 +198,9 @@ const ListItem = ({
 }
 
 const PopupsList = ({ open }: { open: boolean }) => {
-    const { popups, openPopup, closePopup } = PopupProvider.usePopups();
+    const { popups, openPopup } = PopupProvider.usePopups();
+
+    const theme = useTheme();
 
     const getSortedPopups = () => {
         const withoutReference = [...popups];
@@ -209,43 +214,92 @@ const PopupsList = ({ open }: { open: boolean }) => {
         return withoutReference;
     }
 
-    return (
-        <Box display="flex" flexGrow={1} flexDirection="column">
-            {popups.length > 0 && open && <Typography px={2} py={1} variant="subtitle2" fontSize={13}>
-                <strong>Otvorené okná</strong>
-            </Typography>}
-
-            {getSortedPopups().map((popup) => <Box
-                display="flex"
-                width="100%"
-                gap={1}
-                alignItems="center"
-                justifyContent="space-between"
-                pl={2} pr={1}
-                key={popup.id}
-                sx={{
-                    cursor: "pointer",
-                }}
-                onClick={() => openPopup(popup)}
-            >
-                <Box display="flex" flex-grow={1} alignItems="center" gap={1}>
-                    {popup.icon}
-
-                    {
-                        open && <Typography variant="subtitle2">{popup.title}</Typography>
-                    }
-                </Box>
-
-                {
-                    open && <IconButton
-                        aria-label="open drawer"
-                        onClick={() => closePopup(popup)}
-                        edge="start"
+    return <Box flexGrow={1}>
+        <List>
+            {getSortedPopups().map((popup) => (
+                <MuiListItem
+                    key={popup.id}
+                    disablePadding
+                    onClick={() => openPopup(popup)}
+                    sx={{
+                        display: "block",
+                        opacity: popup.hidden ? 0.5 : 1,
+                    }}
+                >
+                    <ListItemButton
+                        sx={{
+                            minHeight: 36,
+                            justifyContent: open ? 'initial' : 'center',
+                            px: 2.5,
+                        }}
                     >
-                        <IoCloseOutline size={24} />
-                    </IconButton>
-                }
-            </Box>)}
-        </Box>
-    );
+                        <ListItemIcon
+                            sx={{
+                                minWidth: 0,
+                                mr: open ? 3 : 'auto',
+                                justifyContent: 'center',
+                                fontSize: 20,
+                                color: theme.palette.grey[600],
+                            }}
+                        >
+                            {popup.icon}
+                        </ListItemIcon>
+
+                        <ListItemText sx={{ opacity: open ? 1 : 0 }}>
+                            <Typography variant="subtitle2" style={{
+                                color: theme.palette.text.primary,
+                            }}>{popup.title}</Typography>
+                        </ListItemText>
+                    </ListItemButton>
+                </MuiListItem>
+            ))}
+        </List>
+    </Box>
+
+    // return (
+    //     <Box display="flex" alignItems="center" flexGrow={1} flexDirection="column">
+    //         {popups.length > 0 && open && <Typography px={2} py={1} variant="subtitle2" fontSize={13}>
+    //             <strong>Otvorené okná</strong>
+    //         </Typography>}
+
+    //         {getSortedPopups().map((popup) => <Box
+    //             key={popup.id}
+    //             sx={{
+    //                 cursor: "pointer",
+    //                 display: "flex",
+    //                 width: "100%",
+    //                 gap: 1,
+    //                 alignItems: "center",
+    //                 justifyContent: open ? "space-between" : "center",
+    //                 pl: 2,
+    //                 pr: 1,
+    //                 opacity: popup.hidden ? 0.4 : 1,
+    //                 "&:hover": {
+    //                     bgcolor: theme.palette.grey[100],
+    //                 }
+    //             }}
+    //             onClick={() => openPopup(popup)}
+    //         >
+    //             <Box display="flex" flex-grow={1} alignItems="center" gap={1}>
+    //                 <Box color={theme.palette.grey[500]}>
+    //                     {popup.icon}
+    //                 </Box>
+
+    //                 {
+    //                     open && <Typography variant="subtitle2" lineHeight={1}>{popup.title}</Typography>
+    //                 }
+    //             </Box>
+
+    //             {
+    //                 open && <IconButton
+    //                     aria-label="open drawer"
+    //                     onClick={() => closePopup(popup)}
+    //                     edge="start"
+    //                 >
+    //                     <IoCloseOutline color={theme.palette.grey[500]} size={24} />
+    //                 </IconButton>
+    //             }
+    //         </Box>)}
+    //     </Box>
+    // );
 }

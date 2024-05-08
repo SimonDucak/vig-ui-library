@@ -8,7 +8,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import { Filter, FilterProps, FilterType } from "../components/Filter";
 import { useState } from "react";
-import { IoAccessibility, IoChevronForward, IoDocument, IoSearchOutline, IoSwapHorizontal } from "react-icons/io5";
+import { IoAccessibility, IoChevronForward, IoDocumentOutline, IoSearchOutline, IoSwapHorizontal } from "react-icons/io5";
 import { PopupProvider } from "../components/popup/PopupProvider";
 
 export const Requests = () => {
@@ -268,7 +268,7 @@ export default function RequestsTable() {
             body: (<div>popup body {id}</div>),
             data: {},
             title: `Popup title ${id}`,
-            icon: <IoDocument />
+            icon: <IoDocumentOutline />
         })
     }
 

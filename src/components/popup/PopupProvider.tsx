@@ -1,14 +1,21 @@
 import { createContext, useContext, useState } from "react";
 import { PopupModel, Popup } from "./Popup";
 
+export type PopupRecord<T> = PopupModel<T> & {
+    hidden: boolean;
+    x: number;
+    y: number;
+};
+
 type PopupProviderState = {
-    popups: PopupModel<any>[];
+    popups: PopupRecord<any>[];
     addPopup: (popup: PopupModel<any>) => void;
     closePopup: (popup: PopupModel<any>) => void;
     focusPopup: (popup: PopupModel<any>) => void;
     hidePopup: (popup: PopupModel<any>) => void;
     openPopup: (popup: PopupModel<any>) => void;
     updatePopup: (popup: { id: string } & Partial<PopupRecord<any>>) => void;
+    hideAllPopups: () => void;
 };
 
 const initialState: PopupProviderState = {
@@ -19,6 +26,7 @@ const initialState: PopupProviderState = {
     hidePopup: () => { },
     openPopup: () => { },
     updatePopup: () => { },
+    hideAllPopups: () => { },
 };
 
 const PopupProviderContext = createContext<PopupProviderState>(initialState);
@@ -26,12 +34,6 @@ const PopupProviderContext = createContext<PopupProviderState>(initialState);
 type PopupProviderProps = {
     children: React.ReactNode;
 }
-
-export type PopupRecord<T> = PopupModel<T> & {
-    hidden: boolean;
-    x: number;
-    y: number;
-};
 
 export const PopupProvider = ({ children }: PopupProviderProps) => {
     const [popups, setPopups] = useState<PopupRecord<any>[]>([]);
@@ -55,6 +57,10 @@ export const PopupProvider = ({ children }: PopupProviderProps) => {
     const closePopup = (popup: PopupModel<any>) => {
         const filteredPopups = popups.filter((p) => p.id !== popup.id);
         setPopups(filteredPopups);
+    }
+
+    const hideAllPopups = () => {
+        setPopups(popups.map((p) => ({ ...p, hidden: true })));
     }
 
     const updatePopup = (data: { id: string } & Partial<PopupRecord<any>>) => {
@@ -94,10 +100,11 @@ export const PopupProvider = ({ children }: PopupProviderProps) => {
         hidePopup,
         openPopup,
         updatePopup,
+        hideAllPopups,
     };
 
     return (
-        <PopupProviderContext.Provider value={value} >
+        <PopupProviderContext.Provider value={value}>
             {children}
 
             <>

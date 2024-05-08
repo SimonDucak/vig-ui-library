@@ -65,7 +65,7 @@ export const MobileRouteHeader = ({ title, onClose }: MobileRouteHeaderProps) =>
             >
                 <IconButton
                     color="primary"
-                    aria-label="open drawer"
+                    aria-label="go back"
                     onClick={() => onClose()}
                     edge="start"
                 >

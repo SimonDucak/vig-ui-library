@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { PopupProvider, PopupRecord } from "./PopupProvider";
-import { Typography, styled, Theme, Button, Box, useTheme, SimplePaletteColorOptions } from "@mui/material";
+import { Typography, styled, Theme, Button, Box, useTheme, SimplePaletteColorOptions, useMediaQuery } from "@mui/material";
+import { MobileRoute } from "../MobileRoute";
 
 export type PopupModel<T> = {
     id: string;
@@ -66,6 +67,8 @@ export const Popup = <T extends any>({ popup }: { popup: PopupRecord<T> }) => {
     const [offset, setOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
     const popupRef = useRef<HTMLDivElement>(null);
     const [isMaximized, setIsMaximized] = useState(false);
+
+    const onlyMediumScreen = useMediaQuery(theme.breakpoints.down("md"));
 
     // Event handler for starting drag
     const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -151,6 +154,12 @@ export const Popup = <T extends any>({ popup }: { popup: PopupRecord<T> }) => {
         }
     }
 
+    if (onlyMediumScreen) {
+        return <MobileRoute title={popup.title} onClose={() => closePopup(popup)}>
+            {popup.body}
+        </MobileRoute>
+    }
+
     return (
         <PopupWrapper
             ref={popupRef}
@@ -170,10 +179,6 @@ export const Popup = <T extends any>({ popup }: { popup: PopupRecord<T> }) => {
                     <Box onClick={() => setIsMaximized(!isMaximized)} sx={getHeaderButtonStyles(theme.palette.success)}></Box>
                     <Box onClick={() => hidePopup(popup)} sx={getHeaderButtonStyles(theme.palette.warning)}></Box>
                     <Box onClick={() => closePopup(popup)} sx={getHeaderButtonStyles(theme.palette.error)}></Box>
-
-                    {/* <button onClick={() => hidePopup(popup)}>_</button>
-                    <button onClick={() => setIsMaximized(true)}>O</button>
-                    <button onClick={() => closePopup(popup)}>X</button> */}
                 </Box>
             </PopupHeader>
 
@@ -182,7 +187,9 @@ export const Popup = <T extends any>({ popup }: { popup: PopupRecord<T> }) => {
             </PopupBody>
 
             <PopupFooter>
-                <Button size="small" color="secondary" onClick={() => closePopup(popup)}>Close</Button>
+                <Button size="small" color="secondary" onClick={() => closePopup(popup)}>
+                    Zatvoriť
+                </Button>
             </PopupFooter>
         </PopupWrapper>
     );
