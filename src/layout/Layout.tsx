@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useTheme } from '@mui/material/styles';
-import { ListItem as MuiListItem, useMediaQuery } from '@mui/material';
+import { ListItem as MuiListItem, Tooltip, useMediaQuery } from '@mui/material';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import List from '@mui/material/List';
@@ -162,7 +162,7 @@ const ListItem = ({
 
     const onlyMediumScreen = useMediaQuery(theme.breakpoints.down("md"));
 
-    return (
+    const item = (
         <MuiListItem disablePadding sx={{ display: "block" }} onClick={() => {
             if (onlyMediumScreen) setOpen(false);
             hideAllPopups();
@@ -195,10 +195,16 @@ const ListItem = ({
             </ListItemButton>
         </MuiListItem>
     );
+
+    if (!open) return <Tooltip placement="right" title={name}>
+        {item}
+    </Tooltip>
+
+    return item;
 }
 
 const PopupsList = ({ open }: { open: boolean }) => {
-    const { popups, openPopup } = PopupProvider.usePopups();
+    const { popups, openPopup, closePopup } = PopupProvider.usePopups();
 
     const theme = useTheme();
 
@@ -216,43 +222,56 @@ const PopupsList = ({ open }: { open: boolean }) => {
 
     return <Box flexGrow={1}>
         <List>
-            {getSortedPopups().map((popup) => (
-                <MuiListItem
-                    key={popup.id}
-                    disablePadding
-                    onClick={() => openPopup(popup)}
-                    sx={{
-                        display: "block",
-                        opacity: popup.hidden ? 0.5 : 1,
-                    }}
-                >
-                    <ListItemButton
+            {getSortedPopups().map((popup) => {
+                const item =
+                    <MuiListItem
+                        key={popup.id}
+                        disablePadding
+                        onClick={() => openPopup(popup)}
                         sx={{
-                            minHeight: 36,
-                            justifyContent: open ? 'initial' : 'center',
-                            px: 2.5,
+                            display: "block",
+                            opacity: popup.hidden ? 0.5 : 1,
                         }}
+                        secondaryAction={!open ? null :
+                            <IconButton onClick={() => closePopup(popup)} edge="end" aria-label="delete">
+                                <IoCloseOutline />
+                            </IconButton>
+                        }
                     >
-                        <ListItemIcon
+                        <ListItemButton
                             sx={{
-                                minWidth: 0,
-                                mr: open ? 3 : 'auto',
-                                justifyContent: 'center',
-                                fontSize: 20,
-                                color: theme.palette.grey[600],
+                                minHeight: 36,
+                                justifyContent: open ? 'initial' : 'center',
+                                px: 2.5,
                             }}
                         >
-                            {popup.icon}
-                        </ListItemIcon>
+                            <ListItemIcon
+                                sx={{
+                                    minWidth: 0,
+                                    mr: open ? 3 : 'auto',
+                                    justifyContent: 'center',
+                                    fontSize: 20,
+                                    color: theme.palette.grey[600],
+                                }}
+                            >
+                                {popup.icon}
+                            </ListItemIcon>
 
-                        <ListItemText sx={{ opacity: open ? 1 : 0 }}>
-                            <Typography variant="subtitle2" style={{
-                                color: theme.palette.text.primary,
-                            }}>{popup.title}</Typography>
-                        </ListItemText>
-                    </ListItemButton>
-                </MuiListItem>
-            ))}
+                            <ListItemText sx={{ opacity: open ? 1 : 0 }}>
+                                <Typography variant="subtitle2" style={{
+                                    color: theme.palette.text.primary,
+                                }}>{popup.title}</Typography>
+                            </ListItemText>
+                        </ListItemButton>
+                    </MuiListItem>
+
+                if (!open) return <Tooltip placement="right" title={popup.title}>
+                    {item}
+                </Tooltip>
+
+
+                return item;
+            })}
         </List>
     </Box>
 
