@@ -6,10 +6,12 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import { Filter, FilterProps, FilterType } from "../components/Filter";
+import { Filter, FilterField, FilterProps } from "../components/filter/Filter";
 import { useState } from "react";
 import { IoAccessibility, IoChevronForward, IoDocumentOutline, IoSearchOutline, IoSwapHorizontal } from "react-icons/io5";
 import { PopupProvider } from "../components/popup/PopupProvider";
+import { FilterType } from "../components/filter/Filters";
+import { SelectFilter } from "../components/filter/SelectFilter";
 
 export const Requests = () => {
     const theme = useTheme();
@@ -29,96 +31,122 @@ export const Requests = () => {
         pageSize: 25,
     });
 
-    const filterProps: FilterProps<typeof query> = {
-        query,
-        onQueryChange: (newQuery: typeof query) => {
-            setQuery(newQuery);
+    const filters: FilterField[] = [];
+
+    filters.push({
+        type: FilterType.INPUT,
+        main: true,
+        placeholder: "Vyhľadať žiadosť",
+        onChange: (value: string) => {
+            setQuery({ ...query, q: value });
         },
-        filters: {
-            q: {
-                type: FilterType.INPUT,
-                main: true,
-                placeholder: "Vyhľadať žiadosť",
-            },
-            client: {
-                type: FilterType.SELECT,
-                options: [
-                    { label: "John Doe", value: 1 },
-                    { label: "Jane Doe", value: 2 },
-                    { label: "Alice", value: 3 },
-                    { label: "Bob", value: 4 },
-                    { label: "Charlie", value: 5 },
-                    { label: "David", value: 6 },
-                ],
-                placeholder: "Klient",
-            },
-            partnerNo: {
-                type: FilterType.SELECT,
-                options: [
-                    { label: "123456", value: 1 },
-                    { label: "654321", value: 2 },
-                    { label: "987654", value: 3 },
-                    { label: "456789", value: 4 },
-                    { label: "789456", value: 5 },
-                    { label: "321654", value: 6 },
-                ],
-                placeholder: "Číslo partnera",
-            },
-            status: {
-                type: FilterType.SELECT,
-                options: [
-                    { label: "Odoslané", value: 1 },
-                    { label: "Spracovávané", value: 2 },
-                    { label: "Dokončené", value: 3 },
-                ],
-                placeholder: "Stav žiadosti",
-            },
-            requester: {
-                type: FilterType.SELECT,
-                options: [
-                    { label: "Klient", value: 1 },
-                    { label: "Maklér", value: 2 },
-                    { label: "Obchodník", value: 3 },
-                ],
-                placeholder: "Podávateľ",
-            },
-            customFilter: {
-                type: FilterType.SELECT,
-                options: [
-                    { label: "123456", value: 1 },
-                    { label: "654321", value: 2 },
-                    { label: "987654", value: 3 },
-                    { label: "456789", value: 4 },
-                    { label: "789456", value: 5 },
-                    { label: "321654", value: 6 },
-                ],
-                placeholder: "Custom Filter",
-            },
-            customFilter1: {
-                type: FilterType.SELECT,
-                options: [
-                    { label: "123456", value: 1 },
-                    { label: "654321", value: 2 },
-                    { label: "987654", value: 3 },
-                    { label: "456789", value: 4 },
-                    { label: "789456", value: 5 },
-                    { label: "321654", value: 6 },
-                ],
-                placeholder: "Custom Filter",
-            },
-            customFilter2: {
-                type: FilterType.SELECT,
-                options: [
-                    { label: "123456", value: 1 },
-                    { label: "654321", value: 2 },
-                    { label: "987654", value: 3 },
-                    { label: "456789", value: 4 },
-                    { label: "789456", value: 5 },
-                    { label: "321654", value: 6 },
-                ],
-                placeholder: "Custom Filter",
-            },
+        getValue: () => query.q,
+    });
+
+    const statusFilter: SelectFilter<number> = {
+        type: FilterType.SELECT,
+        options: [
+            { label: "Odoslané", value: 1 },
+            { label: "Spracovávané", value: 2 },
+            { label: "Dokončené", value: 3 },
+        ],
+        placeholder: "Stav žiadosti",
+        onChange: (value: number | null) => {
+            setQuery({ ...query, status: value ?? -1 });
         },
+        getValue: () => query.status,
+    };
+
+    filters.push(statusFilter);
+
+    const requesterFilter: SelectFilter<number> = {
+        type: FilterType.SELECT,
+        options: [
+            { label: "Klient", value: 1 },
+            { label: "Maklér", value: 2 },
+            { label: "Obchodník", value: 3 },
+        ],
+        placeholder: "Podávateľ",
+        onChange: (value: number | null) => {
+            setQuery({ ...query, requester: value ?? -1 });
+        },
+        getValue: () => query.requester,
+    };
+
+    filters.push(requesterFilter);
+
+    const clientFilter: SelectFilter<number> = {
+        type: FilterType.SELECT,
+        options: [
+            { label: "123456", value: 1 },
+            { label: "654321", value: 2 },
+            { label: "987654", value: 3 },
+            { label: "456789", value: 4 },
+            { label: "789456", value: 5 },
+            { label: "321654", value: 6 },
+        ],
+        placeholder: "Číslo partnera",
+        onChange: (value: number | null) => {
+            setQuery({ ...query, client: value ?? -1 });
+        },
+        getValue: () => query.client,
+    };
+
+    filters.push(clientFilter);
+
+    const partnerNoFilter: SelectFilter<number> = {
+        type: FilterType.SELECT,
+        options: [
+            { label: "123456", value: 1 },
+            { label: "654321", value: 2 },
+            { label: "987654", value: 3 },
+            { label: "456789", value: 4 },
+            { label: "789456", value: 5 },
+            { label: "321654", value: 6 },
+        ],
+        placeholder: "Custom Filter",
+        onChange: (value: number | null) => {
+            setQuery({ ...query, partnerNo: value ?? -1 });
+        },
+        getValue: () => query.partnerNo,
+    };
+        
+    filters.push(partnerNoFilter);
+
+    const customFilter: SelectFilter<number> = {
+        type: FilterType.SELECT,
+        options: [
+            { label: "123456", value: 1 },
+            { label: "654321", value: 2 },
+            { label: "987654", value: 3 },
+            { label: "456789", value: 4 },
+            { label: "789456", value: 5 },
+            { label: "321654", value: 6 },
+        ],
+        placeholder: "Custom Filter",
+        onChange: (value: number | null) => {
+            setQuery({ ...query, customFilter: value ?? -1 });
+        },
+        getValue: () => query.customFilter,
+    };
+
+    filters.push(customFilter);
+
+    const customFilter1: SelectFilter<number> = {
+        type: FilterType.SELECT,
+        options: [
+            { label: "123456", value: 1 },
+            { label: "654321", value: 2 },
+            { label: "987654", value: 3 },
+            { label: "456789", value: 4 },
+            { label: "789456", value: 5 },
+            { label: "321654", value: 6 },
+        ],
+        placeholder: "Custom Filter",
+        onChange: (value: number | null) => {
+            setQuery({ ...query, customFilter1: value ?? -1 });
+        },
+        getValue: () => query.customFilter1,
     };
 
     return (
@@ -133,7 +161,7 @@ export const Requests = () => {
             {tab === 1 && (
                 <Box flexGrow={1} width="100%" display="flex" flexDirection="column" overflow="auto">
                     <Box p={1} px={2}>
-                        <Filter {...filterProps} />
+                        <Filter filters={filters} />
                     </Box>
 
                     <Box display="flex" py={1} px={2} justifyContent="flex-end">
