@@ -1,61 +1,141 @@
-import { MenuItem, Select, SelectChangeEvent, useTheme } from "@mui/material";
+import {
+  Box,
+  Button,
+  FormControlLabel,
+  Popover,
+  Radio,
+  RadioGroup,
+  TextField,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import { FilterFieldBase, FilterType } from "./Filters";
+import { useState } from "react";
+import { removeDiacritics } from "../../utils/string";
+import { PopoverTriggerButton, StyledPopoverBody } from "./FieldPopover";
 
 export type SelectOption<T> = {
-    label: string;
-    value: T;
+  label: string;
+  value: T;
 };
 
 export type SelectFilter<T> = FilterFieldBase & {
-    type: FilterType.SELECT;
-    options: SelectOption<T>[];
-    onChange: (value: T | null) => void;
-    getValue: () => T;
+  type: FilterType.SELECT;
+  options: SelectOption<T>[];
+  onChange: (option: SelectOption<T> | null) => void;
+  getValue: () => T | null;
 };
 
 export interface SelectFilterFieldProps<T> extends SelectFilter<T> {
-    outlined?: boolean;
-} 
-
-export const SelectFilterField = ({ outlined, onChange, getValue, options, placeholder }: SelectFilterFieldProps<unknown>) => {
-    const value = getValue();
-
-    const theme = useTheme();
-    
-    return (
-        <Select
-            label={outlined ? placeholder : null}
-            value={value}
-            onChange={(event: SelectChangeEvent<unknown>) => {
-                const value = event.target.value;
-                if (typeof value === "string" || !value) {
-                    onChange(null);
-                } else {
-                    onChange(value);
-                }
-            }}
-            size="small"
-            sx={{
-                boxShadow: 'none',
-                ...(outlined ? {} : {
-                    '.MuiOutlinedInput-notchedOutline': { border: "0!important" },
-                    ...(!!value && value != -1 ? {
-                        '.MuiInputBase-input': { color: theme.palette.primary.main, fontWeight: 700 },
-                        '.MuiSelect-icon': { color: theme.palette.primary.main },
-                    } : {})
-                })
-            }}
-        >
-            <MenuItem value={-1}>{placeholder}</MenuItem>
-
-            {
-                options.map((option, index) => (
-                    <MenuItem
-                        key={index + 1}
-                        value={index + 1}
-                    >{option.label}</MenuItem>
-                ))
-            }
-        </Select>
-    );
+  outlined?: boolean;
 }
+
+export const SelectFilterField = ({
+  outlined,
+  onChange,
+  getValue,
+  options,
+  placeholder,
+}: SelectFilterFieldProps<any>) => {
+  const [search, setSearch] = useState("");
+
+  const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
+
+  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const open = Boolean(anchorEl);
+
+  const value = getValue();
+
+  const selectedOption = options.find((option) => option.value === value);
+
+  const theme = useTheme();
+
+  const handleChange = (option: SelectOption<any> | null) => {
+    onChange(option);
+    setAnchorEl(null);
+  };
+
+  const filteredOptions = options.filter((option) => {
+    const searchWithoutDia = removeDiacritics(search);
+    const labelWithoutDia = removeDiacritics(option.label);
+    return labelWithoutDia
+      .toLowerCase()
+      .includes(searchWithoutDia.toLowerCase());
+  });
+
+  return (
+    <>
+      <PopoverTriggerButton
+        onClick={handleClick}
+        placeholder={placeholder}
+        value={selectedOption}
+        outlined={outlined}
+      />
+
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+      >
+        <Box
+          sx={{
+            minWidth: "240px",
+          }}
+        >
+          <Box
+            sx={{
+              width: "100%",
+              padding: theme.spacing(1),
+              borderBottom: `1px solid ${theme.palette.divider}`,
+            }}
+          >
+            <TextField
+              label={placeholder}
+              variant="filled"
+              size="small"
+              fullWidth
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </Box>
+
+          <StyledPopoverBody>
+            {filteredOptions.map((option, index) => (
+              <FormControlLabel
+                key={index + 1}
+                control={
+                  <Radio
+                    size="small"
+                    checked={value === option.value}
+                    value={option.value}
+                    onChange={() => handleChange(option)}
+                  />
+                }
+                label={option.label}
+              />
+            ))}
+          </StyledPopoverBody>
+
+          {!!value && (
+            <Box padding={1} display="flex" justifyContent="flex-end">
+              <Button
+                onClick={() => handleChange(null)}
+                size="small"
+                color="secondary"
+              >
+                Vymazať
+              </Button>
+            </Box>
+          )}
+        </Box>
+      </Popover>
+    </>
+  );
+};
