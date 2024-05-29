@@ -269,15 +269,26 @@ function CheckboxesGroup<T>({
   );
 }
 
-export const StyledOptionsWrapper = styled(
-  "div",
-  {}
-)(({ wrap }: { wrap: boolean }) => ({
-  display: "flex",
-  flexDirection: "column",
-  ...(wrap && {
-    flexWrap: "wrap",
-    flexDirection: "row",
-    gap: 0.2,
-  }),
-}));
+export const StyledOptionsWrapper = ({
+  children,
+  wrap,
+}: {
+  children: React.ReactNode;
+  wrap: boolean;
+}) => {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        ...(wrap && {
+          flexWrap: "wrap",
+          flexDirection: "row",
+          gap: 0.2,
+        }),
+      }}
+    >
+      {children}
+    </Box>
+  );
+};

@@ -91,7 +91,6 @@ export const Requests = () => {
     placeholder: "Stav žiadosti",
     onChange: (value: SelectOption<number>[]) => {
       setQuery({ ...query, status: value.map((v) => v.value) });
-      console.log(query.status);
     },
     getValue: () => query.status,
   };
