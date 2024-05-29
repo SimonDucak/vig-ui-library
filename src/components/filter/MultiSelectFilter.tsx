@@ -12,7 +12,7 @@ import {
 import { FilterFieldBase, FilterType } from "./Filters";
 import { useState } from "react";
 import { removeDiacritics } from "../../utils/string";
-import { SelectOption } from "./SelectFilter";
+import { SelectOption, StyledOptionsWrapper } from "./SelectFilter";
 import { PopoverTriggerButton, StyledPopoverBody } from "./FieldPopover";
 import { MobileRoute } from "../MobileRoute";
 
@@ -276,17 +276,7 @@ function CheckboxesGroup<T>({
   wrappedLayout,
 }: CheckboxesGroupProps<T>) {
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        ...(wrappedLayout && {
-          flexWrap: "wrap",
-          flexDirection: "row",
-          gap: 0.2,
-        }),
-      }}
-    >
+    <StyledOptionsWrapper wrap={!!wrappedLayout}>
       {options.map((option, index) => {
         return (
           <FormControlLabel
@@ -303,6 +293,6 @@ function CheckboxesGroup<T>({
           />
         );
       })}
-    </Box>
+    </StyledOptionsWrapper>
   );
 }

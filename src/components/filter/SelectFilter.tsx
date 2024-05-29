@@ -6,13 +6,17 @@ import {
   Radio,
   RadioGroup,
   TextField,
+  Theme,
   Typography,
+  styled,
+  useMediaQuery,
   useTheme,
 } from "@mui/material";
 import { FilterFieldBase, FilterType } from "./Filters";
 import { useState } from "react";
 import { removeDiacritics } from "../../utils/string";
 import { PopoverTriggerButton, StyledPopoverBody } from "./FieldPopover";
+import { MobileRoute } from "../MobileRoute";
 
 export type SelectOption<T> = {
   label: string;
@@ -30,13 +34,11 @@ export interface SelectFilterFieldProps<T> extends SelectFilter<T> {
   outlined?: boolean;
 }
 
-export const SelectFilterField = ({
-  outlined,
+function useSelectHook<T>({
   onChange,
   getValue,
   options,
-  placeholder,
-}: SelectFilterFieldProps<any>) => {
+}: SelectFilterFieldProps<T>) {
   const [search, setSearch] = useState("");
 
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
@@ -51,8 +53,6 @@ export const SelectFilterField = ({
 
   const selectedOption = options.find((option) => option.value === value);
 
-  const theme = useTheme();
-
   const handleChange = (option: SelectOption<any> | null) => {
     onChange(option);
     setAnchorEl(null);
@@ -65,6 +65,50 @@ export const SelectFilterField = ({
       .toLowerCase()
       .includes(searchWithoutDia.toLowerCase());
   });
+
+  return {
+    search,
+    setSearch,
+    anchorEl,
+    setAnchorEl,
+    handleClick,
+    open,
+    value,
+    selectedOption,
+    handleChange,
+    filteredOptions,
+  };
+}
+
+export function SelectFilterField<T>(props: SelectFilterFieldProps<T>) {
+  const theme = useTheme();
+
+  const onlySmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  if (onlySmallScreen) {
+    return <MobileSelectFilterField {...props} />;
+  }
+
+  return <DesktopSelectFilterField {...props} />;
+}
+
+function DesktopSelectFilterField<T>(props: SelectFilterFieldProps<T>) {
+  const theme = useTheme();
+
+  const { outlined, placeholder } = props;
+
+  const {
+    search,
+    setSearch,
+    anchorEl,
+    setAnchorEl,
+    handleClick,
+    open,
+    value,
+    selectedOption,
+    handleChange,
+    filteredOptions,
+  } = useSelectHook(props);
 
   return (
     <>
@@ -107,20 +151,11 @@ export const SelectFilterField = ({
           </Box>
 
           <StyledPopoverBody>
-            {filteredOptions.map((option, index) => (
-              <FormControlLabel
-                key={index + 1}
-                control={
-                  <Radio
-                    size="small"
-                    checked={value === option.value}
-                    value={option.value}
-                    onChange={() => handleChange(option)}
-                  />
-                }
-                label={option.label}
-              />
-            ))}
+            <CheckboxesGroup
+              options={filteredOptions}
+              value={value}
+              handleChange={handleChange}
+            />
           </StyledPopoverBody>
 
           {!!value && (
@@ -138,4 +173,111 @@ export const SelectFilterField = ({
       </Popover>
     </>
   );
+}
+
+function MobileSelectFilterField<T>(props: SelectFilterFieldProps<T>) {
+  const [expanded, setExpanded] = useState(false);
+
+  const { placeholder, options } = props;
+
+  const { value, handleChange, filteredOptions } = useSelectHook(props);
+
+  const limit = 6;
+
+  const slicedOptions = options.slice(0, limit);
+
+  const restOptions = options.slice(limit);
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        padding: (theme) => theme.spacing(2),
+        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+      }}
+    >
+      <Typography variant="subtitle2">{placeholder}</Typography>
+
+      <CheckboxesGroup
+        options={slicedOptions}
+        value={value}
+        handleChange={handleChange}
+        wrappedLayout={true}
+      />
+
+      {restOptions.length > 0 && (
+        <Box display="flex" justifyContent="center" alignItems="center">
+          <Typography
+            variant="body2"
+            p={1}
+            onClick={() => setExpanded(true)}
+            color="primary"
+          >
+            <strong>
+              <u>Ďalšie možnosti ({restOptions.length})</u>
+            </strong>
+          </Typography>
+        </Box>
+      )}
+
+      {expanded && (
+        <MobileRoute title={placeholder} onClose={() => setExpanded(false)}>
+          <Box p={2}>
+            <CheckboxesGroup
+              options={filteredOptions}
+              value={value}
+              handleChange={handleChange}
+            />
+          </Box>
+        </MobileRoute>
+      )}
+    </Box>
+  );
+}
+
+type RadioGroupProps<T> = {
+  options: SelectOption<T>[];
+  value: T | null;
+  handleChange: (option: SelectOption<T> | null) => void;
+  wrappedLayout?: boolean;
 };
+
+function CheckboxesGroup<T>({
+  options,
+  value,
+  handleChange,
+  wrappedLayout,
+}: RadioGroupProps<T>) {
+  return (
+    <StyledOptionsWrapper wrap={!!wrappedLayout}>
+      {options.map((option, index) => (
+        <FormControlLabel
+          key={index + 1}
+          control={
+            <Radio
+              size="small"
+              checked={value === option.value}
+              value={option.value}
+              onChange={() => handleChange(option)}
+            />
+          }
+          label={option.label}
+        />
+      ))}
+    </StyledOptionsWrapper>
+  );
+}
+
+export const StyledOptionsWrapper = styled(
+  "div",
+  {}
+)(({ wrap }: { wrap: boolean }) => ({
+  display: "flex",
+  flexDirection: "column",
+  ...(wrap && {
+    flexWrap: "wrap",
+    flexDirection: "row",
+    gap: 0.2,
+  }),
+}));
