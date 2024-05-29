@@ -15,6 +15,7 @@ import { removeDiacritics } from "../../utils/string";
 import { SelectOption, StyledOptionsWrapper } from "./SelectFilter";
 import { PopoverTriggerButton, StyledPopoverBody } from "./FieldPopover";
 import { MobileRoute } from "../MobileRoute";
+import { FilterMobileRouteHeader } from "./Filter";
 
 export type MultiSelectFilter<T> = FilterFieldBase & {
   type: FilterType.MULTI_SELECT;
@@ -248,7 +249,12 @@ function MobileMultiSelectFilterField<T>(
       )}
 
       {expanded && (
-        <MobileRoute title={placeholder} onClose={() => setExpanded(false)}>
+        <MobileRoute
+          onClose={() => setExpanded(false)}
+          headerBuilder={(onClose) => (
+            <FilterMobileRouteHeader onClose={onClose} title={placeholder} />
+          )}
+        >
           <Box p={2}>
             <CheckboxesGroup
               options={filteredOptions}

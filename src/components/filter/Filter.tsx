@@ -1,8 +1,10 @@
 import {
   Box,
   Button,
+  IconButton,
   Popover,
   TextField,
+  Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
@@ -11,8 +13,9 @@ import { SelectFilter, SelectFilterField } from "./SelectFilter";
 import { FilterType } from "./Filters";
 import { FaFilter } from "react-icons/fa6";
 import { useState } from "react";
-import { MobileRoute } from "../MobileRoute";
+import { MobileRoute, MobileRouteHeaderProps } from "../MobileRoute";
 import { MultiSelectFilterField, MultiSelectFilter } from "./MultiSelectFilter";
+import { IoChevronBack } from "react-icons/io5";
 
 export type FilterField =
   | SelectFilter<any>
@@ -104,7 +107,12 @@ const usePopoverFilter = ({
   const getPopover = (): JSX.Element => {
     if (onlySmallScreen && open) {
       return (
-        <MobileRoute title="Filter" onClose={() => setAnchorEl(null)}>
+        <MobileRoute
+          onClose={() => setAnchorEl(null)}
+          headerBuilder={(onClose) => (
+            <FilterMobileRouteHeader onClose={onClose} title="Filter" />
+          )}
+        >
           <FilterFields filters={filters} outlined={true}></FilterFields>
         </MobileRoute>
       );
@@ -233,5 +241,43 @@ const FilterFields = ({ filters, limit, outlined }: FilterFieldsProps) => {
         }
       })}
     </>
+  );
+};
+
+export const FilterMobileRouteHeader = ({
+  title,
+  onClose,
+}: MobileRouteHeaderProps) => {
+  const theme = useTheme();
+
+  return (
+    <Box
+      display="flex"
+      borderBottom={1}
+      borderColor={theme.palette.divider}
+      justifyContent="space-between"
+      alignItems="center"
+      width="100%"
+    >
+      <Box display="flex" alignItems="center" p={2} flexGrow={1} gap={1}>
+        <IconButton
+          color="primary"
+          aria-label="go back"
+          onClick={() => onClose()}
+          edge="start"
+        >
+          <IoChevronBack size={24} />
+        </IconButton>
+
+        {/* TODO: OVERFLOW FOR TEXT */}
+        <Typography variant="h5" noWrap>
+          {title}
+        </Typography>
+      </Box>
+
+      <Box pr={2}>
+        <Button size="small">Vymazať filter</Button>
+      </Box>
+    </Box>
   );
 };

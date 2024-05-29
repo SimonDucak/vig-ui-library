@@ -17,6 +17,7 @@ import { useState } from "react";
 import { removeDiacritics } from "../../utils/string";
 import { PopoverTriggerButton, StyledPopoverBody } from "./FieldPopover";
 import { MobileRoute } from "../MobileRoute";
+import { FilterMobileRouteHeader } from "./Filter";
 
 export type SelectOption<T> = {
   label: string;
@@ -222,7 +223,12 @@ function MobileSelectFilterField<T>(props: SelectFilterFieldProps<T>) {
       )}
 
       {expanded && (
-        <MobileRoute title={placeholder} onClose={() => setExpanded(false)}>
+        <MobileRoute
+          onClose={() => setExpanded(false)}
+          headerBuilder={(onClose) => (
+            <FilterMobileRouteHeader onClose={onClose} title={placeholder} />
+          )}
+        >
           <Box p={2}>
             <CheckboxesGroup
               options={filteredOptions}
