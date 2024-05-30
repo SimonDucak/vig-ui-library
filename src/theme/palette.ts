@@ -46,5 +46,8 @@ export const palette: PaletteOptions = {
     },
     grey: {
         50: '#FBFBFB',
+        300: '#E5E5E5',
+        400: "999999",
+        500: '#666666',
     }
 };

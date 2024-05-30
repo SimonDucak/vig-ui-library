@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { InputFilter } from "./InputFilter";
 import { SelectFilter, SelectFilterField } from "./SelectFilter";
-import { FilterType } from "./Filters";
+import { FilterType } from "./FilterBase";
 import { FaFilter } from "react-icons/fa6";
 import { useState } from "react";
 import { MobileRoute, MobileRouteHeaderProps } from "../MobileRoute";
@@ -24,10 +24,9 @@ export type FilterField =
 
 export type FilterProps = {
   filters: Array<FilterField>;
-  onClear: () => void;
 };
 
-export const Filter = ({ filters, onClear }: FilterProps) => {
+export const Filter = ({ filters }: FilterProps) => {
   const theme = useTheme();
 
   const onlyMediumScreen = useMediaQuery(theme.breakpoints.down("md"));
@@ -38,7 +37,14 @@ export const Filter = ({ filters, onClear }: FilterProps) => {
     (filter: FilterField) => filter.type === FilterType.INPUT && filter.main
   ) as InputFilter | undefined;
 
-  const { Popover, Trigger } = usePopoverFilter({ filters, onClear });
+  const resetFilter = () => {
+    filters.forEach((filter) => filter.resetFilter());
+  };
+
+  const { Popover, Trigger } = usePopoverFilter({
+    filters,
+    resetFilter,
+  });
 
   let fieldLimit = 4;
 
@@ -86,8 +92,8 @@ export const Filter = ({ filters, onClear }: FilterProps) => {
 
 const usePopoverFilter = ({
   filters,
-  onClear,
-}: FilterProps): {
+  resetFilter,
+}: FilterProps & { resetFilter: () => void }): {
   Popover: JSX.Element;
   Trigger: JSX.Element;
 } => {
@@ -99,22 +105,19 @@ const usePopoverFilter = ({
 
   const onlySmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const onClearFilter = () => {
-    onClear();
+  const onResetFilter = () => {
+    resetFilter();
     setAnchorEl(null);
   };
 
   const getPopover = (): JSX.Element => {
-    if (onlySmallScreen && open) {
+    if (onlySmallScreen && anchorEl) {
       return (
-        <MobileRoute
+        <MobileFilter
           onClose={() => setAnchorEl(null)}
-          headerBuilder={(onClose) => (
-            <FilterMobileRouteHeader onClose={onClose} title="Filter" />
-          )}
-        >
-          <FilterFields filters={filters} outlined={true}></FilterFields>
-        </MobileRoute>
+          filters={filters}
+          onResetFilter={onResetFilter}
+        />
       );
     }
 
@@ -132,12 +135,11 @@ const usePopoverFilter = ({
       >
         <Box display="flex" flexDirection="column">
           <Box
-            p={1}
-            pt={2}
+            p={2}
             minWidth="460px"
             display="grid"
             gridTemplateColumns="repeat(2, 1fr)"
-            gap={1}
+            gap={2}
             borderBottom={`1px solid ${theme.palette.divider}`}
           >
             <FilterFields filters={filters} outlined={true}></FilterFields>
@@ -148,7 +150,7 @@ const usePopoverFilter = ({
               size="small"
               variant="contained"
               color="secondary"
-              onClick={onClearFilter}
+              onClick={onResetFilter}
             >
               Vymazať filter
             </Button>
@@ -247,7 +249,8 @@ const FilterFields = ({ filters, limit, outlined }: FilterFieldsProps) => {
 export const FilterMobileRouteHeader = ({
   title,
   onClose,
-}: MobileRouteHeaderProps) => {
+  onClear,
+}: MobileRouteHeaderProps & { onClear: () => void }) => {
   const theme = useTheme();
 
   return (
@@ -276,8 +279,72 @@ export const FilterMobileRouteHeader = ({
       </Box>
 
       <Box pr={2}>
-        <Button size="small">Vymazať filter</Button>
+        <Button onClick={onClear} size="medium">
+          Vymazať filter
+        </Button>
       </Box>
     </Box>
+  );
+};
+
+type MobileFilterProps = {
+  onClose: () => void;
+  filters: FilterField[];
+  onResetFilter: () => void;
+};
+
+const MobileFilter = ({
+  onClose,
+  filters,
+  onResetFilter,
+}: MobileFilterProps) => {
+  const boxStyles = {
+    flexGrow: 1,
+    display: "flex",
+    flexDirection: "column",
+  };
+
+  const applyAllFilters = () => {
+    filters.forEach((filter) => filter.onChange(filter.localValue));
+    onClose();
+  };
+
+  return (
+    <MobileRoute
+      onClose={onClose}
+      headerBuilder={(onClose) => (
+        <FilterMobileRouteHeader
+          onClose={onClose}
+          title="Filter"
+          onClear={onResetFilter}
+        />
+      )}
+    >
+      <Box sx={boxStyles}>
+        <Box sx={boxStyles}>
+          <FilterFields filters={filters} outlined={true}></FilterFields>
+        </Box>
+
+        <Box
+          sx={(theme) => ({
+            ...boxStyles,
+            flexGrow: 0,
+            flexShrink: 0,
+            height: 100,
+            borderTop: `1px solid ${theme.palette.divider}`,
+            padding: theme.spacing(2),
+            justifyContent: "stretch",
+          })}
+        >
+          <Button
+            onClick={applyAllFilters}
+            size="large"
+            sx={{ height: "100%" }}
+          >
+            Použiť filter
+          </Button>
+        </Box>
+      </Box>
+    </MobileRoute>
   );
 };

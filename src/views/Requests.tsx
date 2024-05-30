@@ -25,9 +25,15 @@ import {
   IoSwapHorizontal,
 } from "react-icons/io5";
 import { PopupProvider } from "../components/popup/PopupProvider";
-import { FilterType } from "../components/filter/Filters";
-import { SelectFilter, SelectOption } from "../components/filter/SelectFilter";
-import { MultiSelectFilter } from "../components/filter/MultiSelectFilter";
+import {
+  SelectFilter,
+  useSelectFilter,
+} from "../components/filter/SelectFilter";
+import {
+  MultiSelectFilter,
+  useMultiSelect,
+} from "../components/filter/MultiSelectFilter";
+import { InputFilter, useInputFilter } from "../components/filter/InputFilter";
 
 type RequestQuery = {
   q: string;
@@ -71,50 +77,48 @@ export const Requests = () => {
 
   const filters: FilterField[] = [];
 
-  filters.push({
-    type: FilterType.INPUT,
+  const searchFilter: InputFilter = useInputFilter({
     main: true,
     placeholder: "Vyhľadať žiadosť",
     onChange: (value: string) => {
-      setQuery({ ...query, q: value });
+      setQuery((prevQuery) => ({ ...prevQuery, q: value }));
     },
     getValue: () => query.q,
   });
 
-  const statusFilter: MultiSelectFilter<number> = {
-    type: FilterType.MULTI_SELECT,
+  filters.push(searchFilter);
+
+  const statusFilter: MultiSelectFilter<number> = useMultiSelect({
     options: [
       { label: "Odoslané", value: 1 },
       { label: "Spracovávané", value: 2 },
       { label: "Dokončené", value: 3 },
     ],
     placeholder: "Stav žiadosti",
-    onChange: (value: SelectOption<number>[]) => {
-      setQuery({ ...query, status: value.map((v) => v.value) });
+    onChange: (value: number[]) => {
+      setQuery((prevQuery) => ({ ...prevQuery, status: value }));
     },
     getValue: () => query.status,
-  };
+  });
 
   filters.push(statusFilter);
 
-  const requesterFilter: SelectFilter<number> = {
-    type: FilterType.SELECT,
+  const requesterFilter: SelectFilter<number> = useSelectFilter({
     options: [
       { label: "Klient", value: 1 },
       { label: "Maklér", value: 2 },
       { label: "Obchodník", value: 3 },
     ],
     placeholder: "Podávateľ",
-    onChange: (value: SelectOption<number> | null) => {
-      setQuery({ ...query, requester: value?.value ?? null });
+    onChange: (value: number | null) => {
+      setQuery((prevQuery) => ({ ...prevQuery, requester: value }));
     },
     getValue: () => query.requester,
-  };
+  });
 
   filters.push(requesterFilter);
 
-  const clientFilter: SelectFilter<number> = {
-    type: FilterType.SELECT,
+  const clientFilter: SelectFilter<number> = useSelectFilter({
     options: [
       { label: "123456", value: 1 },
       { label: "654321", value: 2 },
@@ -124,16 +128,15 @@ export const Requests = () => {
       { label: "321654", value: 6 },
     ],
     placeholder: "Číslo partnera",
-    onChange: (value: SelectOption<number> | null) => {
-      setQuery({ ...query, client: value?.value ?? null });
+    onChange: (value: number | null) => {
+      setQuery((prevQuery) => ({ ...prevQuery, client: value }));
     },
     getValue: () => query.client,
-  };
+  });
 
   filters.push(clientFilter);
 
-  const partnerNoFilter: MultiSelectFilter<number> = {
-    type: FilterType.MULTI_SELECT,
+  const partnerNoFilter: MultiSelectFilter<number> = useMultiSelect({
     options: [
       { label: "123456", value: 1 },
       { label: "654321", value: 2 },
@@ -155,16 +158,15 @@ export const Requests = () => {
       { label: "321654", value: 19 },
     ],
     placeholder: "Custom Filter",
-    onChange: (value: SelectOption<number>[]) => {
-      setQuery({ ...query, partnerNo: value.map((v) => v.value) });
+    onChange: (value: number[]) => {
+      setQuery((prevQuery) => ({ ...prevQuery, partnerNo: value }));
     },
     getValue: () => query.partnerNo,
-  };
+  });
 
   filters.push(partnerNoFilter);
 
-  const customFilter: SelectFilter<number> = {
-    type: FilterType.SELECT,
+  const customFilter: SelectFilter<number> = useSelectFilter({
     options: [
       { label: "123456", value: 1 },
       { label: "654321", value: 2 },
@@ -186,16 +188,15 @@ export const Requests = () => {
       { label: "321654", value: 19 },
     ],
     placeholder: "Custom Filter",
-    onChange: (value: SelectOption<number> | null) => {
-      setQuery({ ...query, customFilter: value?.value ?? null });
+    onChange: (value: number | null) => {
+      setQuery((prevQuery) => ({ ...prevQuery, customFilter: value }));
     },
     getValue: () => query.customFilter,
-  };
+  });
 
   filters.push(customFilter);
 
-  const customFilter1: SelectFilter<number> = {
-    type: FilterType.SELECT,
+  const customFilter1: SelectFilter<number> = useSelectFilter({
     options: [
       { label: "123456", value: 1 },
       { label: "654321", value: 2 },
@@ -205,11 +206,11 @@ export const Requests = () => {
       { label: "321654", value: 6 },
     ],
     placeholder: "Custom Filter",
-    onChange: (value: SelectOption<number> | null) => {
-      setQuery({ ...query, customFilter1: value?.value ?? null });
+    onChange: (value: number | null) => {
+      setQuery((prevQuery) => ({ ...prevQuery, customFilter1: value }));
     },
     getValue: () => query.customFilter1,
-  };
+  });
 
   filters.push(customFilter1);
 
@@ -234,8 +235,8 @@ export const Requests = () => {
           flexDirection="column"
           overflow="auto"
         >
-          <Box p={1} px={2}>
-            <Filter filters={filters} onClear={onClearFilter} />
+          <Box p={1} pt={2} px={2}>
+            <Filter filters={filters} />
           </Box>
 
           <Box display="flex" py={1} px={2} justifyContent="flex-end">
@@ -255,6 +256,17 @@ export const Requests = () => {
             pb={`${theme.variables.appBarHeight * 2}px`}
           >
             <RequestsTable />
+
+            <Box display="flex" pt={2} px={2} justifyContent="flex-end">
+              <Pagination
+                totalCount={389}
+                page={query.page}
+                pageSize={query.pageSize}
+                onChange={(page: number, pageSize: number) => {
+                  setQuery({ ...query, page, pageSize });
+                }}
+              />
+            </Box>
           </Box>
         </Box>
       )}

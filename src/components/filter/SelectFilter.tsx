@@ -4,15 +4,17 @@ import {
   FormControlLabel,
   Popover,
   Radio,
-  RadioGroup,
   TextField,
-  Theme,
   Typography,
-  styled,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { FilterFieldBase, FilterType } from "./Filters";
+import {
+  BaseOmittedFields,
+  FilterFieldBase,
+  FilterType,
+  useFilterBase,
+} from "./FilterBase";
 import { useState } from "react";
 import { removeDiacritics } from "../../utils/string";
 import { PopoverTriggerButton, StyledPopoverBody } from "./FieldPopover";
@@ -24,42 +26,57 @@ export type SelectOption<T> = {
   value: T;
 };
 
-export type SelectFilter<T> = FilterFieldBase & {
+export type SelectFilter<T> = FilterFieldBase<T | null> & {
   type: FilterType.SELECT;
   options: SelectOption<T>[];
-  onChange: (option: SelectOption<T> | null) => void;
-  getValue: () => T | null;
 };
 
-export interface SelectFilterFieldProps<T> extends SelectFilter<T> {
-  outlined?: boolean;
-}
+export const useSelectFilter = <T,>(
+  params: Omit<SelectFilter<T>, BaseOmittedFields>
+): SelectFilter<T> => {
+  const filterBase = useFilterBase(params, null);
 
-function useSelectHook<T>({
-  onChange,
-  getValue,
-  options,
-}: SelectFilterFieldProps<T>) {
+  return {
+    ...params,
+    ...filterBase,
+    type: FilterType.SELECT,
+  };
+};
+
+const useSelectHook = <T,>(props: SelectFilter<T>) => {
   const [search, setSearch] = useState("");
 
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
 
-  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+  const currentValue: T | null = props.getValue();
+
+  const openPopover = (event: React.MouseEvent<HTMLDivElement>) => {
     setAnchorEl(event.currentTarget);
+  };
+
+  const closePopover = () => {
+    setAnchorEl(null);
+    props.setLocalValue(currentValue);
   };
 
   const open = Boolean(anchorEl);
 
-  const value = getValue();
+  const currentSelectedOption = props.options.find(
+    (option) => option.value === currentValue
+  );
 
-  const selectedOption = options.find((option) => option.value === value);
-
-  const handleChange = (option: SelectOption<any> | null) => {
-    onChange(option);
+  const applyFilter = () => {
+    props.applyFilter();
     setAnchorEl(null);
   };
 
-  const filteredOptions = options.filter((option) => {
+  const resetFilter = () => {
+    props.setLocalValue(null);
+    props.applyFilter();
+    setAnchorEl(null);
+  };
+
+  const filteredOptions = props.options.filter((option) => {
     const searchWithoutDia = removeDiacritics(search);
     const labelWithoutDia = removeDiacritics(option.label);
     return labelWithoutDia
@@ -71,17 +88,18 @@ function useSelectHook<T>({
     search,
     setSearch,
     anchorEl,
-    setAnchorEl,
-    handleClick,
+    openPopover,
+    closePopover,
     open,
-    value,
-    selectedOption,
-    handleChange,
+    currentValue,
+    currentSelectedOption,
     filteredOptions,
+    applyFilter,
+    resetFilter,
   };
-}
+};
 
-export function SelectFilterField<T>(props: SelectFilterFieldProps<T>) {
+export const SelectFilterField = <T,>(props: SelectFilter<T>) => {
   const theme = useTheme();
 
   const onlySmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -91,39 +109,39 @@ export function SelectFilterField<T>(props: SelectFilterFieldProps<T>) {
   }
 
   return <DesktopSelectFilterField {...props} />;
-}
+};
 
-function DesktopSelectFilterField<T>(props: SelectFilterFieldProps<T>) {
+function DesktopSelectFilterField<T>(props: SelectFilter<T>) {
   const theme = useTheme();
 
-  const { outlined, placeholder } = props;
+  const { outlined, placeholder, setLocalValue, localValue } = props;
 
   const {
     search,
     setSearch,
     anchorEl,
-    setAnchorEl,
-    handleClick,
+    openPopover,
+    closePopover,
     open,
-    value,
-    selectedOption,
-    handleChange,
+    currentSelectedOption,
     filteredOptions,
+    applyFilter,
+    resetFilter,
   } = useSelectHook(props);
 
   return (
     <>
       <PopoverTriggerButton
-        onClick={handleClick}
+        onClick={openPopover}
         placeholder={placeholder}
-        value={selectedOption}
+        value={currentSelectedOption}
         outlined={outlined}
       />
 
       <Popover
         open={open}
         anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
+        onClose={closePopover}
         anchorOrigin={{
           vertical: "bottom",
           horizontal: "left",
@@ -152,36 +170,35 @@ function DesktopSelectFilterField<T>(props: SelectFilterFieldProps<T>) {
           </Box>
 
           <StyledPopoverBody>
-            <CheckboxesGroup
+            <RadioGroup
               options={filteredOptions}
-              value={value}
-              handleChange={handleChange}
+              value={localValue}
+              handleChange={setLocalValue}
             />
           </StyledPopoverBody>
 
-          {!!value && (
-            <Box padding={1} display="flex" justifyContent="flex-end">
-              <Button
-                onClick={() => handleChange(null)}
-                size="small"
-                color="secondary"
-              >
-                Vymazať
-              </Button>
-            </Box>
-          )}
+          <Box padding={1} display="flex" justifyContent="flex-end" gap={1}>
+            <Button onClick={applyFilter} size="small">
+              Použiť
+            </Button>
+
+            <Button onClick={resetFilter} size="small" color="secondary">
+              Vymazať
+            </Button>
+          </Box>
         </Box>
       </Popover>
     </>
   );
 }
 
-function MobileSelectFilterField<T>(props: SelectFilterFieldProps<T>) {
+function MobileSelectFilterField<T>(props: SelectFilter<T>) {
   const [expanded, setExpanded] = useState(false);
 
-  const { placeholder, options } = props;
+  const { placeholder, options, setLocalValue, localValue, resetFilter } =
+    props;
 
-  const { value, handleChange, filteredOptions } = useSelectHook(props);
+  const { filteredOptions } = useSelectHook(props);
 
   const limit = 6;
 
@@ -200,10 +217,10 @@ function MobileSelectFilterField<T>(props: SelectFilterFieldProps<T>) {
     >
       <Typography variant="subtitle2">{placeholder}</Typography>
 
-      <CheckboxesGroup
+      <RadioGroup
         options={slicedOptions}
-        value={value}
-        handleChange={handleChange}
+        value={localValue}
+        handleChange={setLocalValue}
         wrappedLayout={true}
       />
 
@@ -226,14 +243,21 @@ function MobileSelectFilterField<T>(props: SelectFilterFieldProps<T>) {
         <MobileRoute
           onClose={() => setExpanded(false)}
           headerBuilder={(onClose) => (
-            <FilterMobileRouteHeader onClose={onClose} title={placeholder} />
+            <FilterMobileRouteHeader
+              onClose={onClose}
+              title={placeholder}
+              onClear={() => {
+                resetFilter();
+                setExpanded(false);
+              }}
+            />
           )}
         >
           <Box p={2}>
-            <CheckboxesGroup
+            <RadioGroup
               options={filteredOptions}
-              value={value}
-              handleChange={handleChange}
+              value={localValue}
+              handleChange={setLocalValue}
             />
           </Box>
         </MobileRoute>
@@ -245,11 +269,11 @@ function MobileSelectFilterField<T>(props: SelectFilterFieldProps<T>) {
 type RadioGroupProps<T> = {
   options: SelectOption<T>[];
   value: T | null;
-  handleChange: (option: SelectOption<T> | null) => void;
+  handleChange: (option: T | null) => void;
   wrappedLayout?: boolean;
 };
 
-function CheckboxesGroup<T>({
+function RadioGroup<T>({
   options,
   value,
   handleChange,
@@ -265,7 +289,7 @@ function CheckboxesGroup<T>({
               size="small"
               checked={value === option.value}
               value={option.value}
-              onChange={() => handleChange(option)}
+              onChange={() => handleChange(option.value)}
             />
           }
           label={option.label}

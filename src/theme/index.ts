@@ -1,10 +1,7 @@
 import { createTheme } from "@mui/material";
 import { palette } from "./palette";
 import { fontFamily, typography } from "./typography";
-import { injectTableTheme } from "./table";
-import { injectPaginationTheme } from "./pagination";
-import { injectButtonTheme } from "./button";
-import { injectTextFieldTheme } from "./textField";
+import { useComponentsTheme } from "./components";
 
 declare module '@mui/material/styles' {
     interface VigTheme {
@@ -30,19 +27,6 @@ let theme = createTheme({
         MuiCssBaseline: {
             styleOverrides: fontFamily,
         },
-        MuiTextField: {
-            variants: [
-                {
-                    props: { variant: "filled" },
-                    style: {
-                        "& .MuiInputBase-input": {
-                            backgroundColor: 'black',
-                            borderRadius: 8,
-                        },
-                    },
-                },
-            ],
-        }
     },
     variables: {
         drawerWidth: 268,
@@ -50,11 +34,6 @@ let theme = createTheme({
     }
 });
 
-
-
-theme = injectTableTheme(theme);
-theme = injectPaginationTheme(theme);
-theme = injectButtonTheme(theme);
-theme = injectTextFieldTheme(theme);   
+theme = useComponentsTheme(theme); 
 
 export default theme;

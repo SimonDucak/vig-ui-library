@@ -9,7 +9,12 @@ import {
   useMediaQuery,
   Typography,
 } from "@mui/material";
-import { FilterFieldBase, FilterType } from "./Filters";
+import {
+  BaseOmittedFields,
+  FilterFieldBase,
+  FilterType,
+  useFilterBase,
+} from "./FilterBase";
 import { useState } from "react";
 import { removeDiacritics } from "../../utils/string";
 import { SelectOption, StyledOptionsWrapper } from "./SelectFilter";
@@ -17,27 +22,27 @@ import { PopoverTriggerButton, StyledPopoverBody } from "./FieldPopover";
 import { MobileRoute } from "../MobileRoute";
 import { FilterMobileRouteHeader } from "./Filter";
 
-export type MultiSelectFilter<T> = FilterFieldBase & {
+export type MultiSelectFilter<T> = FilterFieldBase<T[]> & {
   type: FilterType.MULTI_SELECT;
   options: SelectOption<T>[];
-  onChange: (options: SelectOption<T>[]) => void;
-  getValue: () => T[];
 };
 
-export interface MultiSelectFilterFieldProps<T> extends MultiSelectFilter<T> {
-  outlined?: boolean;
-}
+export const useMultiSelect = <T,>(
+  params: Omit<MultiSelectFilter<T>, BaseOmittedFields>
+): MultiSelectFilter<T> => {
+  const filterBase = useFilterBase(params, []);
 
-function useMultiSelectHook<T>({
-  onChange,
-  getValue,
-  options,
-}: MultiSelectFilterFieldProps<T>) {
+  return {
+    ...params,
+    ...filterBase,
+    type: FilterType.MULTI_SELECT,
+  };
+};
+
+const useMultiSelectHook = <T,>(props: MultiSelectFilter<T>) => {
   const [search, setSearch] = useState("");
 
-  const currentValue: T[] = getValue();
-
-  const [localValue, setLocalValue] = useState<T[]>(getValue());
+  const currentValue: T[] = props.getValue();
 
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
 
@@ -47,38 +52,27 @@ function useMultiSelectHook<T>({
 
   const closePopover = () => {
     setAnchorEl(null);
-    setLocalValue(currentValue);
+    props.setLocalValue(currentValue);
   };
 
   const open = Boolean(anchorEl);
 
-  const currentSelectedOptions = options.filter((option) =>
+  const currentSelectedOptions = props.options.filter((option) =>
     currentValue.includes(option.value)
   );
 
-  const handleChange = (option: SelectOption<T>) => {
-    const alredySelected = localValue.includes(option.value);
-    const newLocalValue = alredySelected
-      ? localValue.filter((value) => value !== option.value)
-      : [...localValue, option.value];
-    setLocalValue(newLocalValue);
-  };
-
   const applyFilter = () => {
-    const newOptions = options.filter((option) =>
-      localValue.includes(option.value)
-    );
-    onChange(newOptions);
+    props.applyFilter();
     setAnchorEl(null);
   };
 
-  const clearFilter = () => {
-    setLocalValue([]);
-    onChange([]);
+  const resetFilter = () => {
+    props.setLocalValue([]);
+    props.applyFilter();
     setAnchorEl(null);
   };
 
-  const filteredOptions = options.filter((option) => {
+  const filteredOptions: SelectOption<T>[] = props.options.filter((option) => {
     const searchWithoutDia = removeDiacritics(search);
     const labelWithoutDia = removeDiacritics(option.label);
     return labelWithoutDia
@@ -89,24 +83,19 @@ function useMultiSelectHook<T>({
   return {
     search,
     setSearch,
-    localValue,
-    setLocalValue,
     anchorEl,
-    setAnchorEl,
     openPopover,
     closePopover,
     open,
+    currentValue,
     currentSelectedOptions,
-    handleChange,
-    clearFilter,
-    applyFilter,
     filteredOptions,
+    applyFilter,
+    resetFilter,
   };
-}
+};
 
-export function MultiSelectFilterField<T>(
-  props: MultiSelectFilterFieldProps<T>
-) {
+export const MultiSelectFilterField = <T,>(props: MultiSelectFilter<T>) => {
   const theme = useTheme();
 
   const onlySmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -116,26 +105,22 @@ export function MultiSelectFilterField<T>(
   }
 
   return <DesktopMultiSelectFilterField {...props} />;
-}
+};
 
-function DesktopMultiSelectFilterField<T>(
-  props: MultiSelectFilterFieldProps<T>
-) {
+function DesktopMultiSelectFilterField<T>(props: MultiSelectFilter<T>) {
   const theme = useTheme();
 
-  const { outlined, placeholder } = props;
+  const { outlined, placeholder, localValue, setLocalValue } = props;
 
   const {
     search,
     setSearch,
-    localValue,
     anchorEl,
     openPopover,
     closePopover,
     open,
     currentSelectedOptions,
-    handleChange,
-    clearFilter,
+    resetFilter,
     applyFilter,
     filteredOptions,
   } = useMultiSelectHook(props);
@@ -180,7 +165,7 @@ function DesktopMultiSelectFilterField<T>(
             <CheckboxesGroup
               options={filteredOptions}
               localValue={localValue}
-              handleChange={handleChange}
+              handleChange={setLocalValue}
             />
           </StyledPopoverBody>
 
@@ -189,7 +174,7 @@ function DesktopMultiSelectFilterField<T>(
               Použiť
             </Button>
 
-            <Button onClick={clearFilter} size="small" color="secondary">
+            <Button onClick={resetFilter} size="small" color="secondary">
               Vymazať
             </Button>
           </Box>
@@ -199,15 +184,12 @@ function DesktopMultiSelectFilterField<T>(
   );
 }
 
-function MobileMultiSelectFilterField<T>(
-  props: MultiSelectFilterFieldProps<T>
-) {
+function MobileMultiSelectFilterField<T>(props: MultiSelectFilter<T>) {
   const [expanded, setExpanded] = useState(false);
 
-  const { placeholder, options } = props;
+  const { placeholder, options, localValue, setLocalValue } = props;
 
-  const { localValue, handleChange, filteredOptions } =
-    useMultiSelectHook(props);
+  const { filteredOptions, resetFilter } = useMultiSelectHook(props);
 
   const limit = 6;
 
@@ -229,7 +211,7 @@ function MobileMultiSelectFilterField<T>(
       <CheckboxesGroup
         options={slicedOptions}
         localValue={localValue}
-        handleChange={handleChange}
+        handleChange={setLocalValue}
         wrappedLayout={true}
       />
 
@@ -252,14 +234,18 @@ function MobileMultiSelectFilterField<T>(
         <MobileRoute
           onClose={() => setExpanded(false)}
           headerBuilder={(onClose) => (
-            <FilterMobileRouteHeader onClose={onClose} title={placeholder} />
+            <FilterMobileRouteHeader
+              onClose={onClose}
+              title={placeholder}
+              onClear={resetFilter}
+            />
           )}
         >
           <Box p={2}>
             <CheckboxesGroup
               options={filteredOptions}
               localValue={localValue}
-              handleChange={handleChange}
+              handleChange={setLocalValue}
             />
           </Box>
         </MobileRoute>
@@ -271,16 +257,20 @@ function MobileMultiSelectFilterField<T>(
 type CheckboxesGroupProps<T> = {
   options: SelectOption<T>[];
   localValue: T[];
-  handleChange: (option: SelectOption<T>) => void;
+  handleChange: (option: T[]) => void;
   wrappedLayout?: boolean;
 };
 
-function CheckboxesGroup<T>({
-  options,
-  localValue,
-  handleChange,
-  wrappedLayout,
-}: CheckboxesGroupProps<T>) {
+function CheckboxesGroup<T>(props: CheckboxesGroupProps<T>) {
+  const { wrappedLayout, options, localValue } = props;
+
+  const handleChange = (toggleValue: T) => {
+    const newValue = localValue.includes(toggleValue)
+      ? localValue.filter((value) => value !== toggleValue)
+      : [...localValue, toggleValue];
+    props.handleChange(newValue);
+  };
+
   return (
     <StyledOptionsWrapper wrap={!!wrappedLayout}>
       {options.map((option, index) => {
@@ -292,7 +282,7 @@ function CheckboxesGroup<T>({
                 size="small"
                 checked={localValue.includes(option.value)}
                 value={option.value}
-                onChange={() => handleChange(option)}
+                onChange={() => handleChange(option.value)}
               />
             }
             label={option.label}

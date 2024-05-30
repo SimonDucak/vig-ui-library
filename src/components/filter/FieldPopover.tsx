@@ -76,6 +76,6 @@ export const StyledPopoverBody = styled(
   overflowY: "auto",
   overflowX: "hidden",
   width: "100%",
-  padding: theme.spacing(1),
+  padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
   borderBottom: `1px solid ${theme.palette.divider}`,
 }));
