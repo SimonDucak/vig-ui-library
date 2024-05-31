@@ -309,12 +309,20 @@ const MobileFilter = ({
     onClose();
   };
 
+  const rollbackAllFilters = () => {
+    filters.forEach((filter) => filter.rollbackFilter());
+    onClose();
+  };
+
   return (
     <MobileRoute
       onClose={onClose}
       headerBuilder={(onClose) => (
         <FilterMobileRouteHeader
-          onClose={onClose}
+          onClose={() => {
+            rollbackAllFilters();
+            onClose();
+          }}
           title="Filter"
           onClear={onResetFilter}
         />
